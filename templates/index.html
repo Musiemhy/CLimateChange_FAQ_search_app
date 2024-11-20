@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FAQ Search</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/main.css') }}"
+    />
+  </head>
+  <body>
+    <header>
+      <h1>FAQ Search</h1>
+    </header>
+    <div class="container">
+      <h1>Find Answers to Your Questions</h1>
+      <div class="sample_questions">
+        <h3 style="text-align: center">Sample question to test the project</h3>
+        <p>What is the greenhouse effect</p>
+        <p>what is global warming</p>
+        <p>what is climate change</p>
+      </div>
+      <form class="search-form" method="POST" action="/search">
+        <input
+          type="text"
+          id="query"
+          name="query"
+          placeholder="Enter your query here..."
+          required
+        />
+        <button type="submit">Search</button>
+      </form>
+      <div class="results" id="results"></div>
+    </div>
+
+    <script>
+      const form = document.querySelector(".search-form");
+      const resultsDiv = document.getElementById("results");
+
+      // Function to determine if a string is a question
+      function isQuestion(text) {
+        // Check if text is not null/undefined and ends with a question mark
+        return text && text.trim().endsWith("?");
+      }
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const query = document.getElementById("query").value;
+        const response = await fetch("/search", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: `query=${encodeURIComponent(query)}`,
+        });
+        const results = await response.json();
+        resultsDiv.innerHTML = "";
+
+        if (results.length > 0) {
+          results.forEach((result) => {
+            // Check if the result is a question
+            if (!isQuestion(result.answer)) {
+              const resultItem = document.createElement("div");
+              resultItem.className = "result-item";
+              resultItem.innerHTML = `
+                        <p> Similarity: ${result.similarity.toFixed(2)}</p>
+                        <p> Answer: ${result.answer}</p>
+                        <small>Source: <a href="${
+                          result.source
+                        }" target="_blank">${result.source}</a></small>
+                    `;
+              resultsDiv.appendChild(resultItem);
+            }
+          });
+
+          // Show a message if all results are filtered out
+          if (resultsDiv.innerHTML === "") {
+            resultsDiv.innerHTML = "<p>No suitable answers found.</p>";
+          }
+        } else {
+          resultsDiv.innerHTML = "<p>No results found.</p>";
+        }
+      });
+    </script>
+  </body>
+</html>
